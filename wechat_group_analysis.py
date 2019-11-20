@@ -37,7 +37,7 @@ def get_gender_info(name):
     # Get gender information from target group
     # 获取性别统计信息
     members = chatroom['MemberList']
-    stat = pd.Series(0, index=['M', 'F', 'O', 'M/F ratio'])
+    stat = pd.Series(0, index=['M', 'F', 'O'])
     for i in range(len(members)):
         tsex = members[i]['Sex'];
         if tsex == 2:
@@ -46,7 +46,7 @@ def get_gender_info(name):
             stat['M'] += 1
         else:
             stat['O'] += 1
-    stat['M/F ratio'] = float(stat.M) / stat.F
+    stat['M/F ratio'] = str(round(float(stat.M) / stat.F, 4))
     return stat
 
 
@@ -83,12 +83,12 @@ def get_gender_info_by_city(name):
     # Plot gender ratio and total number of members at given cities
     # 作图显示目标城市在群中的人数，以及男女比
     ax1 = plt.subplot()
-    ax1.bar(stat.index, stat['M/F ratio'], color='orange', alpha=0.5, width=0.5)
+    ax1.plot(stat['M/F ratio'], '.-', color='darkblue')
     ax1.set_ylabel('Male/Female Ratio')
-    ax1.set_ylim([0, 2])
     ax2 = ax1.twinx()
-    ax2.plot(stat.M + stat.F + stat.O, '.-', color='darkblue')
+    ax2.bar(stat.index, stat.M + stat.F + stat.O, color='orange', alpha=0.5, width=0.5)
     ax2.set_ylabel('Total number')
+    ax2.set_ylim([0, (max(stat.M + stat.F + stat.O)/10+1)*10])
     ax2.legend(['Total number'])
     plt.savefig('%s_Group_gender_ratio_by_city.png' %name)
 
@@ -201,7 +201,7 @@ if __name__ == '__main__':
     itchat.auto_login(hotReload=1)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--group_name', type=str, help='Name of the WeChat group to be analyzed.') # 群名
+    parser.add_argument('group_name', type=str, help='Name of the WeChat group to be analyzed.') # 群名
     parser.add_argument('--run_all', type=bool, default=False, help='Run all functions below.')  # 运行全部功能
     parser.add_argument('--gender_info', type=bool, default=False, help='Extract gender information.') # 抽取性别信息
     parser.add_argument('--gender_info_by_city', type=bool, default=False,
@@ -220,11 +220,12 @@ if __name__ == '__main__':
                              'sentiment analysis.') # 抽取群成员签名信息（分性别），分词，翻译，进行情感分析
     args, unparsed = parser.parse_known_args()
 
-    print(args.group_name)
     if not itchat.search_chatrooms(args.group_name):
         print('ERROR: Chat group [%s] not activated, please check group name, or post a msg in the group. / '
                                '群聊【%s】未激活，请检查群名，或在群中发布一条消息。' %(args.group_name, args.group_name))
     else:
+        print('Analyzing / 正在分析群聊 【%s】...' %args.group_name)
+
         # Extract gender information
         # 抽取性别信息
         if args.run_all or args.gender_info:
